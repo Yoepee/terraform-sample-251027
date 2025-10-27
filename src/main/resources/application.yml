@@ -1,3 +1,11 @@
 spring:
   application:
     name: MySpringBootApp
+  config:
+    import: optional:file:.env[.properties]
+custom:
+  cloud:
+    aws:
+      credentials:
+        access-key: ${CUSTOM__CLOUD__AWS__CREDENTIALS__ACCESS_KEY}
+        secret-key: ${CUSTOM__CLOUD__AWS__CREDENTIALS__SECRET_KEY}
