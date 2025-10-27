@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class HomeController {
     private final S3Client s3Client;
-    private static final String BUCKET_NAME = "dev-bucket-sik2-1";
+    private static final String BUCKET_NAME = "dev-bucket-dykim-1";
     private static final String REGION = "ap-northeast-2";
     private static final String IMG_DIR_NAME = "img1";
 
@@ -55,6 +56,32 @@ public class HomeController {
         s3Client.putObject(putObjectRequest,
                 RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-        return "Uploaded Success";
+        return """
+                <img src="%s">
+                <hr>
+                <div>업로드 완료</div>
+                """.formatted(getS3FileUrl(IMG_DIR_NAME + "/" + file.getOriginalFilename()));
+    }
+
+    @GetMapping("/deleteFile")
+    public String showDeleteFile() {
+        return """
+                <form action="/deleteFile" method="post">
+                    <input type="text" name="fileName">
+                    <input type="submit" value="delete">
+                </form>
+                """;
+    }
+
+    @PostMapping("/deleteFile")
+    @ResponseBody
+    public String deleteFile(String fileName) {
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(BUCKET_NAME)
+                .key(IMG_DIR_NAME + "/" + fileName)
+                .build();
+
+        s3Client.deleteObject(deleteObjectRequest);
+        return "파일이 삭제되었습니다.";
     }
 }
