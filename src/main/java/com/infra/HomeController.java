@@ -58,7 +58,7 @@ public class HomeController {
         <head>
           <meta charset="utf-8"/>
           <meta name="viewport" content="width=device-width, initial-scale=1"/>
-          <title>S3 파일 업로드 테스트</title>
+          <title>S3 파일 업로드 테스트2</title>
           <style>
             body { margin: 24px; }
             .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
