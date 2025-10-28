@@ -8,13 +8,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,9 +26,12 @@ public class HomeController {
     }
 
     @GetMapping("/")
-    public List<String> home() {
-        List<Bucket> bucketList = s3Client.listBuckets().buckets();
-        return bucketList.stream().map(Bucket::name).collect(Collectors.toList());
+    public String home() {
+//        List<Bucket> bucketList = s3Client.listBuckets().buckets();
+//        return bucketList.stream().map(Bucket::name).collect(Collectors.toList());
+        return """
+                <h1>S3 파일 업로드 테스트</h1>
+                """;
     }
 
     @GetMapping("/upload")
