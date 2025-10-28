@@ -26,8 +26,3 @@ logging:
 custom:
   site:
     name: "My Site"
-  cloud:
-    aws:
-      credentials:
-        access-key: ${CUSTOM__CLOUD__AWS__CREDENTIALS__ACCESS_KEY}
-        secret-key: ${CUSTOM__CLOUD__AWS__CREDENTIALS__SECRET_KEY}
