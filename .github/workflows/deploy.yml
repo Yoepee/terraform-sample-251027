@@ -1,17 +1,22 @@
-name: deploy.yml
+name: 'deploy'
+
 on:
   push:
     paths:
+      - '.github/workflows/**'
       - 'src/**'
-      - '.github/workflows/deploy.yml'
+      - 'build.gradle'
       - 'Dockerfile'
-      - 'README.md'
+      - 'readme.md'
+      - 'infraScript/**'
     branches:
       - 'main'
+
+env:
+  IMAGE_NAME: blog-1 # 이미지 이름
+
 jobs:
   makeTagAndRelease:
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     outputs:
       tag_name: ${{ steps.create_tag.outputs.new_tag }}
@@ -33,10 +38,8 @@ jobs:
           body: ${{ steps.create_tag.outputs.changelog }}
           draft: false
           prerelease: false
+
   buildImageAndPush:
-    permissions:
-      contents: read
-      packages: write
     name: 도커 이미지 빌드와 푸시
     needs: makeTagAndRelease
     runs-on: ubuntu-latest
@@ -57,7 +60,6 @@ jobs:
           OWNER: "${{ github.repository_owner }}"
       - name: application-secret.yml 생성
         env:
-          ACTIONS_STEP_DEBUG: true
           APPLICATION_SECRET: ${{ secrets.APPLICATION_SECRET_YML }}
         run: echo "$APPLICATION_SECRET" > src/main/resources/application-secret.yml
       - name: 빌드 앤 푸시
@@ -66,11 +68,10 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ env.OWNER_LC }}/blog:${{ needs.makeTagAndRelease.outputs.tag_name }},
-            ghcr.io/${{ env.OWNER_LC }}/blog:latest
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ needs.makeTagAndRelease.outputs.tag_name }},
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:latest
+
   deploy:
-    permissions:
-        contents: read
     runs-on: ubuntu-latest
     needs: [ buildImageAndPush ]
     steps:
@@ -81,32 +82,13 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          instance-ids: "${{ secrets.AWS_EC2_INSTANCE_ID }}" # EC2 인스턴스 ID
+          instance-ids: ${{ secrets.AWS_EC2_INSTANCE_ID }}
           working-directory: /
           comment: Deploy
           command: |
-            set -e
-            
-            OWNER="${{ github.repository_owner }}"
-            OWNER_LC=$(echo "${OWNER}" | tr '[:upper:]' '[:lower:]')
-            IMAGE="ghcr.io/${OWNER_LC}/${{ secrets.DOCKER_IMAGE_NAME }}:latest"
-            NAME=${{ secrets.DOCKER_IMAGE_NAME }}
-            PORT=8090
-            
-            echo "[1/3] 기존 컨테이너 중지 및 삭제"
-            docker rm -f "$NAME" 2>/dev/null || true
-            
-            echo "[2/3] 최신 이미지 풀"
-            docker pull "$IMAGE" || true
-            
-            echo "[3/3] 새 컨테이너 실행"
-            mkdir -p /dockerProjects/$NAME/volumes/gen
-            docker run -d \
-              --name "$NAME" \
-              --restart unless-stopped \
-              -p ${PORT}:8080 \
-              -e TZ=Asia/Seoul \
-              -v /dockerProjects/$NAME/volumes/gen:/gen \
-              "$IMAGE"
-            
-            echo "✅ 배포 완료!"
+            echo "=== 배포 시작 ==="
+            docker stop ${{ env.IMAGE_NAME }} || true
+            docker rm ${{ env.IMAGE_NAME }} || true
+            docker pull ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+            docker run -d --name ${{ env.IMAGE_NAME }} -p 8081:8080 ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+            echo "=== 배포 완료 ==="
