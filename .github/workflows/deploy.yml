@@ -8,12 +8,11 @@ on:
       - 'build.gradle'
       - 'Dockerfile'
       - 'readme.md'
-      - 'infraScript/**'
     branches:
       - 'main'
 
 env:
-  IMAGE_NAME: blog-1 # 이미지 이름
+  IMAGE_NAME: blog-1
 
 jobs:
   makeTagAndRelease:
