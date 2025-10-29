@@ -7,12 +7,12 @@ on:
       - 'src/**'
       - 'build.gradle'
       - 'Dockerfile'
-      - 'readme.md'
+      - 'README.md'
     branches:
       - 'main'
 
 env:
-  IMAGE_NAME: blog-1
+  IMAGE_NAME: 14565-1 # 이미지 이름 설정
 
 jobs:
   makeTagAndRelease:
@@ -21,25 +21,19 @@ jobs:
       tag_name: ${{ steps.create_tag.outputs.new_tag }}
     steps:
       - uses: actions/checkout@v4
-      - name: Create Tag
-        id: create_tag
+      - id: create_tag
         uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.create_tag.outputs.new_tag }}
           release_name: Release ${{ steps.create_tag.outputs.new_tag }}
           body: ${{ steps.create_tag.outputs.changelog }}
-          draft: false
-          prerelease: false
 
   buildImageAndPush:
-    name: 도커 이미지 빌드와 푸시
     needs: makeTagAndRelease
     runs-on: ubuntu-latest
     steps:
@@ -88,6 +82,8 @@ jobs:
             echo "=== 배포 시작 ==="
             docker stop ${{ env.IMAGE_NAME }} || true
             docker rm ${{ env.IMAGE_NAME }} || true
+            docker rmi -f $(docker images "ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}" -q) || true
+            docker image prune -f || true
             docker pull ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
             docker run -d --name ${{ env.IMAGE_NAME }} -p 8081:8080 ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
             echo "=== 배포 완료 ==="
